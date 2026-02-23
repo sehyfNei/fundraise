@@ -8,7 +8,7 @@ from typing import Any
 
 import streamlit as st
 
-from openai_analysis import analyze_donor
+from analysis import analyze_donor
 
 DONOR_PATH = Path(__file__).with_name("donor.json")
 
