@@ -14,7 +14,7 @@ SYSTEM_PROMPT = (
 )
 
 
-def analyze_donor_profile(profile: dict[str, Any]) -> str:
+def analyze_donor(profile: dict[str, Any]) -> str:
     """Return AI-generated donor strategy recommendations.
 
     Args:
@@ -52,5 +52,5 @@ def analyze_donor_profile(profile: dict[str, Any]) -> str:
             max_output_tokens=500,
         )
         return response.output_text.strip()
-    except Exception as exc:  # surface API/client issues to UI with context
+    except Exception as exc:
         raise RuntimeError(f"OpenAI analysis request failed: {exc}") from exc
