@@ -1,0 +1,22 @@
+{
+  "donor_id": "DNR-10021",
+  "name": "Alex Morgan",
+  "location": "Austin, TX",
+  "preferred_contact": "email",
+  "lifetime_giving_usd": 18500,
+  "last_gift": {
+    "amount_usd": 2500,
+    "date": "2025-10-18",
+    "campaign": "STEM Scholarship Fund"
+  },
+  "interests": [
+    "education equity",
+    "first-generation students",
+    "mentorship"
+  ],
+  "engagement_notes": [
+    "Attended annual donor dinner in 2024 and asked about long-term impact metrics.",
+    "Opened 4 of last 5 email updates.",
+    "Responded positively to student testimonial stories."
+  ]
+}
