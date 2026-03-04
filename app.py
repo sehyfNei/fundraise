@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import tempfile
 from pathlib import Path
 
@@ -14,6 +13,23 @@ from pdf_editor.parser import parse_pdf
 
 st.set_page_config(page_title="LLM PDF Editor MVP", layout="wide")
 st.title("LLM Controlled PDF Editor (MVP)")
+st.caption("Edit PDFs with plain-English instructions (replace/rewrite).")
+
+with st.sidebar:
+    st.subheader("How to use")
+    st.markdown(
+        """
+1. Upload a PDF.
+2. Check extracted paragraph IDs.
+3. Enter an instruction.
+4. Click **Apply instruction**.
+5. Download the edited PDF.
+
+**Supported examples**
+- `replace all "Company A" with "Company B"`
+- `rewrite paragraph 2 in professional tone`
+        """
+    )
 
 uploaded = st.file_uploader("Upload a PDF", type=["pdf"])
 instruction = st.text_input("Instruction", placeholder='e.g. replace all "A" with "B"')
@@ -25,7 +41,19 @@ if uploaded is not None:
 
         document = parse_pdf(str(input_path), uploaded.name)
 
-        with st.expander("Parsed blocks"):
+        paragraph_blocks = [b for b in document.blocks if b.id.startswith("paragraph_")]
+        with st.expander("Extracted paragraph IDs (for rewrite targeting)", expanded=True):
+            if paragraph_blocks:
+                st.table(
+                    [
+                        {"id": b.id, "page": b.page, "preview": b.text[:120]}
+                        for b in paragraph_blocks
+                    ]
+                )
+            else:
+                st.info("No paragraph blocks detected in this PDF.")
+
+        with st.expander("Full parsed blocks (debug view)"):
             st.json(document.to_dict())
 
         if st.button("Apply instruction"):
@@ -34,12 +62,14 @@ if uploaded is not None:
             else:
                 try:
                     command = interpret_instruction(instruction)
+                    st.info(f"Interpreted command: {command.to_dict()}")
+
                     edited_document = apply_command(document, command)
 
                     output_path = Path(tmp_dir) / f"edited_{uploaded.name}"
                     generate_pdf(edited_document, str(output_path))
 
-                    st.success(f"Applied command: {command.to_dict()}")
+                    st.success("Edit applied successfully.")
                     st.download_button(
                         "Download edited PDF",
                         data=output_path.read_bytes(),
