@@ -1,55 +1,54 @@
-# LLM Controlled PDF Editor (MVP)
+# LLM Controlled PDF Editor (Layout-Aware MVP)
 
-This project is a practical MVP for an **LLM-controlled PDF editor**.
+This project is an MVP for an **LLM-controlled PDF editor** that uses an intermediate representation.
 
-You upload a PDF, give natural-language instructions, and the system:
-1. Parses the PDF into a structured JSON-like model.
-2. Converts your instruction into an edit command.
-3. Applies the command on the document model.
-4. Regenerates an edited PDF.
+Pipeline:
+1. Parse PDF into **Markdown-like content + layout metadata**.
+2. Interpret user instruction into a structured edit command.
+3. Apply edit on the intermediate representation.
+4. Regenerate PDF using original layout metadata.
 
-## How editing works (current MVP)
+## Why this approach
 
-The app does **model-level editing**, not direct pixel-level PDF manipulation.
+Directly editing raw PDF bytes is brittle.
+This project follows a production-style direction:
 
-- `parse_pdf(...)` extracts text blocks from each page and assigns IDs like `paragraph_1`, `paragraph_2`, etc.
-- `interpret_instruction(...)` reads your text command and maps it into an `EditCommand` object.
-- `apply_command(...)` updates the in-memory document model:
-  - `replace`: global string replacement in every block.
-  - `rewrite`: rewrites a single targeted paragraph (currently through a placeholder function).
-- `generate_pdf(...)` writes updated text back to a new PDF.
+- **PDF → intermediate representation** (`ParsedDocument` with pages, blocks, and bbox metadata)
+- Edit at structured content level
+- Regenerate from structure while preserving approximate original layout
 
-### Supported instruction formats
+## How editing works
+
+- `parse_pdf(...)` extracts text blocks and stores:
+  - `block.id` (e.g., `paragraph_1`)
+  - `block.text`
+  - `layout.bbox`, `layout.page_width`, `layout.page_height`
+- `interpret_instruction(...)` converts NL instruction into `EditCommand`
+- `apply_command(...)` edits block text in the intermediate representation
+- `generate_pdf(...)` redraws each block near its original coordinates
+
+## Supported instruction formats
 
 - `replace all "Company A" with "Company B"`
 - `rewrite paragraph 2 in professional tone`
 - `rewrite paragraph 1`
 
-## User interface flow
+## User interface
 
-The Streamlit UI is intentionally simple:
+Streamlit UI includes:
 
-1. **Upload PDF**
-2. **Preview extracted paragraph IDs** (so you know what can be targeted)
-3. **Write instruction** in plain English using supported patterns
-4. **Apply instruction**
-5. **Download edited PDF**
-
-## MVP Features
-
-- Upload PDF
-- Extract page text blocks/paragraphs
-- Natural-language command interpretation
-- `replace` action (`replace all "A" with "B"`)
-- `rewrite` action (`rewrite paragraph 2 in professional tone`)
-- Export edited PDF
+- **Markdown tab**: editable-source style preview of parsed document
+- **Paragraph IDs tab**: target IDs for rewrite commands
+- **Layout metadata tab**: raw structured JSON for debugging
+- Command interpretation feedback before apply
+- Download regenerated PDF
 
 ## Tech Stack
 
 - Python 3.10+
-- [PyMuPDF](https://pymupdf.readthedocs.io/) for PDF parsing
-- [ReportLab](https://www.reportlab.com/dev/docs/) for PDF generation
-- [Streamlit](https://streamlit.io/) for a quick UI
+- [PyMuPDF](https://pymupdf.readthedocs.io/) for parsing
+- [ReportLab](https://www.reportlab.com/dev/docs/) for regeneration
+- [Streamlit](https://streamlit.io/) for UI
 
 ## Quick Start
 
@@ -60,7 +59,8 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Notes
+## Current limitations
 
-- This MVP focuses on text-level edits, not pixel-perfect layout preservation.
-- For production-grade layout-aware editing, convert PDF to an intermediate format (HTML/Markdown + layout metadata) and regenerate from that structure.
+- Layout is **approximately preserved**, not pixel-perfect.
+- Tables/images are not yet reconstructed semantically.
+- Rewrite currently uses a placeholder function (`llm.py`) and should be replaced with a real LLM backend.

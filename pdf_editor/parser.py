@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import fitz
 
-from pdf_editor.models import Block, ParsedDocument
+from pdf_editor.models import Block, LayoutMetadata, Page, ParsedDocument
 
 
 def _classify_block(text: str) -> str:
@@ -17,11 +17,15 @@ def _classify_block(text: str) -> str:
 def parse_pdf(path: str, file_name: str) -> ParsedDocument:
     doc = fitz.open(path)
     blocks: list[Block] = []
+    pages: list[Page] = []
     paragraph_index = 0
 
     try:
         for page_idx, page in enumerate(doc, start=1):
+            rect = page.rect
+            page_model = Page(number=page_idx, width=rect.width, height=rect.height)
             page_blocks = page.get_text("blocks")
+
             for raw in page_blocks:
                 x0, y0, x1, y1, text, *_ = raw
                 text = text.strip()
@@ -41,10 +45,17 @@ def parse_pdf(path: str, file_name: str) -> ParsedDocument:
                         type=block_type,
                         text=text,
                         page=page_idx,
-                        bbox=(x0, y0, x1, y1),
+                        layout=LayoutMetadata(
+                            bbox=(x0, y0, x1, y1),
+                            page_width=rect.width,
+                            page_height=rect.height,
+                        ),
                     )
                 )
+                page_model.block_ids.append(block_id)
+
+            pages.append(page_model)
     finally:
         doc.close()
 
-    return ParsedDocument(file_name=file_name, blocks=blocks)
+    return ParsedDocument(file_name=file_name, pages=pages, blocks=blocks)

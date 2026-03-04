@@ -12,15 +12,15 @@ from pdf_editor.parser import parse_pdf
 
 
 st.set_page_config(page_title="LLM PDF Editor MVP", layout="wide")
-st.title("LLM Controlled PDF Editor (MVP)")
-st.caption("Edit PDFs with plain-English instructions (replace/rewrite).")
+st.title("LLM Controlled PDF Editor")
+st.caption("Layout-aware pipeline: PDF → Markdown + layout metadata → edit → regenerate PDF")
 
 with st.sidebar:
     st.subheader("How to use")
     st.markdown(
         """
 1. Upload a PDF.
-2. Check extracted paragraph IDs.
+2. Review intermediate Markdown + paragraph IDs.
 3. Enter an instruction.
 4. Click **Apply instruction**.
 5. Download the edited PDF.
@@ -41,8 +41,14 @@ if uploaded is not None:
 
         document = parse_pdf(str(input_path), uploaded.name)
 
-        paragraph_blocks = [b for b in document.blocks if b.id.startswith("paragraph_")]
-        with st.expander("Extracted paragraph IDs (for rewrite targeting)", expanded=True):
+        st.subheader("Intermediate representation")
+        tab_md, tab_ids, tab_debug = st.tabs(["Markdown", "Paragraph IDs", "Layout metadata"])
+
+        with tab_md:
+            st.code(document.to_markdown(), language="markdown")
+
+        with tab_ids:
+            paragraph_blocks = [b for b in document.blocks if b.id.startswith("paragraph_")]
             if paragraph_blocks:
                 st.table(
                     [
@@ -53,7 +59,7 @@ if uploaded is not None:
             else:
                 st.info("No paragraph blocks detected in this PDF.")
 
-        with st.expander("Full parsed blocks (debug view)"):
+        with tab_debug:
             st.json(document.to_dict())
 
         if st.button("Apply instruction"):
@@ -69,7 +75,7 @@ if uploaded is not None:
                     output_path = Path(tmp_dir) / f"edited_{uploaded.name}"
                     generate_pdf(edited_document, str(output_path))
 
-                    st.success("Edit applied successfully.")
+                    st.success("Edit applied and regenerated with layout metadata.")
                     st.download_button(
                         "Download edited PDF",
                         data=output_path.read_bytes(),
