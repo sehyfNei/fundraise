@@ -95,3 +95,46 @@ You can also override build label:
 ```bash
 PDF_EDITOR_UI_VERSION=my-local-build streamlit run app.py
 ```
+
+
+## Build a real PDF Reader editing UX (Canva/Adobe style)
+
+To make this feel like Adobe/Canva, use a browser PDF viewer (PDF.js) and wire it to this backend.
+
+### 1) Reader rendering layer
+- Render PDF pages with Mozilla PDF.js.
+- Keep a separate HTML overlay layer per page for interaction boxes.
+
+### 2) Overlay box model (already supported by backend)
+- Use `pdf_editor.view_model.to_reader_view_model(...)` to get blocks with:
+  - `id`
+  - `page`
+  - `bbox`
+  - `normalized_bbox` (0..1 coords for zoom-safe overlay rendering)
+- Draw each box using `normalized_bbox` relative to page viewport size.
+
+### 3) Click-to-edit interaction
+- On box click, store `selected_block_id` in frontend state.
+- Send payload like:
+
+```json
+{
+  "instruction": "rewrite selected block in professional tone",
+  "selected_block_id": "paragraph_5"
+}
+```
+
+- Backend flow:
+  1. `interpret_instruction(instruction)`
+  2. `inject_selected_target(command, selected_block_id)`
+  3. `apply_command(document, command)`
+  4. `generate_pdf(document, output_path)`
+
+### 4) Production UX improvements
+- Inline text edit mode (double-click box to edit raw text directly).
+- Multi-select block edits (style/tone transform on selected set).
+- Undo/redo stack (command history).
+- Version snapshots for safe rollback.
+- Background OCR fallback for scanned PDFs.
+
+This repo now contains the core data contract and command pipeline needed for that PDF.js UI.
