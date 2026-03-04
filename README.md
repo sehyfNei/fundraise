@@ -138,3 +138,19 @@ To make this feel like Adobe/Canva, use a browser PDF viewer (PDF.js) and wire i
 - Background OCR fallback for scanned PDFs.
 
 This repo now contains the core data contract and command pipeline needed for that PDF.js UI.
+
+
+## LLM setup (Groq)
+
+Set your Groq API key as an environment variable (do **not** hardcode it in code):
+
+```bash
+export GROQ_API_KEY=your_key_here
+streamlit run app.py
+```
+
+- `pdf_editor/llm.py` will call Groq chat completions when `GROQ_API_KEY` is present.
+- If the key is missing or the request fails, the app falls back to deterministic local placeholder rewrite output.
+
+### Security note
+If an API key was accidentally shared publicly, rotate/revoke it immediately in the provider dashboard and replace it with a new one.
