@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import tempfile
 from pathlib import Path
 
@@ -12,12 +13,23 @@ from pdf_editor.parser import parse_pdf
 from pdf_editor.workflow import inject_selected_target
 
 
+def _ui_build_label() -> str:
+    """Expose a visible build/version marker to avoid confusion with stale UI sessions."""
+    return os.getenv("PDF_EDITOR_UI_VERSION", "v2-box-targeted")
+
+
 st.set_page_config(page_title="LLM PDF Editor MVP", layout="wide")
 st.title("LLM Controlled PDF Editor")
 st.caption("Layout-aware pipeline: PDF → Markdown + layout metadata → edit → regenerate PDF")
+st.info(f"UI build: {_ui_build_label()}")
 
 with st.sidebar:
     st.subheader("How to use")
+    st.caption(f"Build: {_ui_build_label()}")
+    if st.button("Force refresh app state"):
+        st.cache_data.clear()
+        st.cache_resource.clear()
+        st.rerun()
     st.markdown(
         """
 1. Upload a PDF.

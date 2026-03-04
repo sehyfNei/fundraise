@@ -79,3 +79,19 @@ streamlit run app.py
 - Layout is **approximately preserved**, not pixel-perfect.
 - Tables/images are not yet reconstructed semantically.
 - Rewrite currently uses a placeholder function (`llm.py`) and should be replaced with a real LLM backend.
+
+
+## Frontend showing older version?
+
+If you still see an older UI, check these quickly:
+
+1. Restart Streamlit process (`Ctrl+C` then `streamlit run app.py`).
+2. Use sidebar button **Force refresh app state**.
+3. Confirm the on-screen build label at top: `UI build: v2-box-targeted` (or set `PDF_EDITOR_UI_VERSION`).
+4. Ensure you are launching from this repo path and branch.
+
+You can also override build label:
+
+```bash
+PDF_EDITOR_UI_VERSION=my-local-build streamlit run app.py
+```
