@@ -8,14 +8,28 @@ Pipeline:
 3. Apply edit on the intermediate representation.
 4. Regenerate PDF using original layout metadata.
 
-## Why this approach
+## Canva/Adobe-like direction (implemented MVP path)
 
-Directly editing raw PDF bytes is brittle.
-This project follows a production-style direction:
+This version adds a **box-targeted editing flow**:
 
-- **PDF → intermediate representation** (`ParsedDocument` with pages, blocks, and bbox metadata)
-- Edit at structured content level
-- Regenerate from structure while preserving approximate original layout
+- PDF is parsed into editable blocks (`id`, `type`, `bbox`, `page`).
+- UI shows all boxes and lets you select one.
+- You can run: `rewrite selected block in professional tone`.
+- The selected box ID is injected into the rewrite command and updated.
+
+This is the backend foundation required before integrating a full browser PDF canvas.
+
+## Mozilla PDF.js integration plan
+
+To get closer to Canva/Adobe UX:
+
+1. Use PDF.js viewer to render PDF pages in-browser.
+2. Draw overlay rectangles using parser `bbox` metadata.
+3. Click a rectangle to set `selected_block_id`.
+4. Send instruction + selected ID to backend.
+5. Regenerate and hot-reload edited PDF.
+
+The current project already supports steps 3–5 on the backend side.
 
 ## How editing works
 
@@ -24,6 +38,7 @@ This project follows a production-style direction:
   - `block.text`
   - `layout.bbox`, `layout.page_width`, `layout.page_height`
 - `interpret_instruction(...)` converts NL instruction into `EditCommand`
+- `inject_selected_target(...)` maps selected UI box to rewrite command
 - `apply_command(...)` edits block text in the intermediate representation
 - `generate_pdf(...)` redraws each block near its original coordinates
 
@@ -31,14 +46,14 @@ This project follows a production-style direction:
 
 - `replace all "Company A" with "Company B"`
 - `rewrite paragraph 2 in professional tone`
-- `rewrite paragraph 1`
+- `rewrite selected block in professional tone`
 
 ## User interface
 
 Streamlit UI includes:
 
-- **Markdown tab**: editable-source style preview of parsed document
-- **Paragraph IDs tab**: target IDs for rewrite commands
+- **Markdown tab**: parsed document projection
+- **Boxes tab**: block IDs, bounding boxes, and selectable target block
 - **Layout metadata tab**: raw structured JSON for debugging
 - Command interpretation feedback before apply
 - Download regenerated PDF

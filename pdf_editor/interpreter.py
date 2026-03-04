@@ -34,6 +34,14 @@ def interpret_instruction(instruction: str) -> EditCommand:
         style = match.group("style")
         return EditCommand(action="rewrite", target=f"paragraph_{idx}", style=style)
 
+    rewrite_selected_pattern = re.compile(
+        r"rewrite(?:\s+the)?(?:\s+selected)?(?:\s+block|\s+box)?(?:\s+in\s+(?P<style>.+?)\s+tone)?$",
+        flags=re.IGNORECASE,
+    )
+    match = rewrite_selected_pattern.search(text)
+    if match:
+        return EditCommand(action="rewrite", style=match.group("style"))
+
     raise InstructionParseError(
-        "Instruction not recognized. Try: replace all \"A\" with \"B\" or rewrite paragraph 2 in professional tone"
+        "Instruction not recognized. Try: replace all \"A\" with \"B\", rewrite paragraph 2 in professional tone, or rewrite selected block in professional tone"
     )

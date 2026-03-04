@@ -9,6 +9,7 @@ from pdf_editor.editor import apply_command
 from pdf_editor.generator import generate_pdf
 from pdf_editor.interpreter import InstructionParseError, interpret_instruction
 from pdf_editor.parser import parse_pdf
+from pdf_editor.workflow import inject_selected_target
 
 
 st.set_page_config(page_title="LLM PDF Editor MVP", layout="wide")
@@ -20,7 +21,7 @@ with st.sidebar:
     st.markdown(
         """
 1. Upload a PDF.
-2. Review intermediate Markdown + paragraph IDs.
+2. Pick a block (box) from the selector.
 3. Enter an instruction.
 4. Click **Apply instruction**.
 5. Download the edited PDF.
@@ -28,11 +29,12 @@ with st.sidebar:
 **Supported examples**
 - `replace all "Company A" with "Company B"`
 - `rewrite paragraph 2 in professional tone`
+- `rewrite selected block in professional tone`
         """
     )
 
 uploaded = st.file_uploader("Upload a PDF", type=["pdf"])
-instruction = st.text_input("Instruction", placeholder='e.g. replace all "A" with "B"')
+instruction = st.text_input("Instruction", placeholder='e.g. rewrite selected block in professional tone')
 
 if uploaded is not None:
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -42,22 +44,33 @@ if uploaded is not None:
         document = parse_pdf(str(input_path), uploaded.name)
 
         st.subheader("Intermediate representation")
-        tab_md, tab_ids, tab_debug = st.tabs(["Markdown", "Paragraph IDs", "Layout metadata"])
+        tab_md, tab_boxes, tab_debug = st.tabs(["Markdown", "Boxes", "Layout metadata"])
 
         with tab_md:
             st.code(document.to_markdown(), language="markdown")
 
-        with tab_ids:
-            paragraph_blocks = [b for b in document.blocks if b.id.startswith("paragraph_")]
-            if paragraph_blocks:
-                st.table(
-                    [
-                        {"id": b.id, "page": b.page, "preview": b.text[:120]}
-                        for b in paragraph_blocks
-                    ]
+        with tab_boxes:
+            if document.blocks:
+                box_rows = []
+                for b in document.blocks:
+                    bbox = b.layout.bbox if b.layout else None
+                    box_rows.append(
+                        {
+                            "id": b.id,
+                            "page": b.page,
+                            "type": b.type,
+                            "bbox": str(bbox),
+                            "preview": b.text[:120],
+                        }
+                    )
+                st.table(box_rows)
+                selected_block_id = st.selectbox(
+                    "Select box to target for 'rewrite selected block'",
+                    options=[b.id for b in document.blocks],
                 )
             else:
-                st.info("No paragraph blocks detected in this PDF.")
+                st.info("No editable blocks detected in this PDF.")
+                selected_block_id = None
 
         with tab_debug:
             st.json(document.to_dict())
@@ -68,6 +81,7 @@ if uploaded is not None:
             else:
                 try:
                     command = interpret_instruction(instruction)
+                    command = inject_selected_target(command, selected_block_id)
                     st.info(f"Interpreted command: {command.to_dict()}")
 
                     edited_document = apply_command(document, command)
