@@ -8,6 +8,19 @@ Pipeline:
 3. Apply edit on the intermediate representation.
 4. Regenerate PDF using original layout metadata.
 
+
+
+## Canva-like UI mode
+
+The app now opens your PDF in a visual reader-style canvas and overlays a box around each detected component.
+
+- The PDF is displayed as-is in an embedded viewer.
+- Each parsed component is shown as an overlay rectangle.
+- The selected component is highlighted in red.
+- You apply edits with plain-English commands (for example: `rewrite selected block in professional tone`).
+
+This gives a non-code editing feel similar to design tools, while still using the same backend command pipeline.
+
 ## Canva/Adobe-like direction (implemented MVP path)
 
 This version adds a **box-targeted editing flow**:
@@ -50,13 +63,13 @@ The current project already supports steps 3–5 on the backend side.
 
 ## User interface
 
-Streamlit UI includes:
+Streamlit UI now focuses on a visual editing flow:
 
-- **Markdown tab**: parsed document projection
-- **Boxes tab**: block IDs, bounding boxes, and selectable target block
-- **Layout metadata tab**: raw structured JSON for debugging
-- Command interpretation feedback before apply
-- Download regenerated PDF
+- **Document canvas** with the original PDF rendered in an embedded reader
+- **Overlay component boxes** drawn over detected content blocks
+- **Selected component highlight** (red) for targeted rewrite operations
+- **Edit panel** for natural-language commands and download action
+- Optional component table in an expander for reference
 
 ## Tech Stack
 
@@ -87,7 +100,7 @@ If you still see an older UI, check these quickly:
 
 1. Restart Streamlit process (`Ctrl+C` then `streamlit run app.py`).
 2. Use sidebar button **Force refresh app state**.
-3. Confirm the on-screen build label at top: `UI build: v2-box-targeted` (or set `PDF_EDITOR_UI_VERSION`).
+3. Confirm the on-screen build label at top: `UI build: v3-canvas-view` (or set `PDF_EDITOR_UI_VERSION`).
 4. Ensure you are launching from this repo path and branch.
 
 You can also override build label:
